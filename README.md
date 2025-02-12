@@ -14,6 +14,7 @@ users. Key features include location filtering to ensure relevance (e.g., users 
 not see offers from the UK), a robust verification process for users to ensure trust and data
 security, and secure payment integration that supports multiple options such as cash and
 bank transfers.
+
 Additionally, the website must adhere to current SEO standards, ensuring high visibility and
 traffic efficiency. Data security and privacy are paramount, with secure handling of user
 information and transaction details. The design and architecture of the platform must allow
@@ -21,15 +22,14 @@ for scalability and future enhancements, enabling seamless user experiences whil
 maintaining the integrity of the system. This solution will empower individuals to efficiently
 connect with potential employers or contractors, promoting secure and localized
 transactions in a user-friendly environment.
+
 Website need to meet following requirements:
 • Modern, user-friendly store design
 • Responsive website (mobile menu, touch-friendly elements, responsive theme)
-• Content management system (Theme, banner management, blog/news section,
-otpion to add discounts)
+• Content management system (Theme, banner management, blog/news section, option to add discounts)
 • Job catalog (Job listing, categories, details)
 • Search and filtering, sorting
-• Checkout proces (Guest checkout, shipping options, payment processing, order
-review)
+• Checkout proces (Guest checkout, shipping options, payment processing, order preview)
 • Admin Portal
 • Customers reviews and rating
 • User registration and authentification
@@ -37,4 +37,5 @@ review)
 • Customer suport ( contact forms, live chat)
 • Notifications (email, sms)
 • Search engine optimization (Meta Tags, SEO-friendly URLs, Sitemap Generation)
+
 Client: Szymon Smolen (SOYO DEVELOPMENTS)
