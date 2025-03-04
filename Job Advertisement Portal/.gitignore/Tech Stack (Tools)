@@ -1,7 +1,0 @@
-## 🛠 Tech Stack
-- **Frontend**: React.js / Vue.js / Next.js (Choose one)
-- **Backend**: Node.js (Express.js) / Python (Django/FastAPI)
-- **Database**: PostgreSQL / MongoDB
-- **Authentication**: JWT / OAuth
-- **Payment Processing**: Stripe / PayPal
-- **Hosting**: AWS / Firebase / Vercel / DigitalOcean
