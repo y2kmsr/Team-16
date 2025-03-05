@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .navbar {
+            background-color: #007bff;
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: white !important;
+        }
+
+        .card img {
+            max-height: 150px;
+            object-fit: cover;
+        }
+
+        .dashboard-card {
+            min-height: 200px;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-body .btn {
+            margin-top: auto;
+        }
+
+        .profile-pic {
+            max-height: 100px;
+            max-width: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .application-status {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">Job Portal</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#jobs">Jobs</a></li>
+                <li class="nav-item"><a class="nav-link" href="#dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#admin">Admin</a></li>
+                <li class="nav-item"><a class="nav-link" href="#profile">Profile</a></li>
+                <li class="nav-item"><a class="nav-link" href="#messages">Messages</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Job Listings Section -->
+<div class="container mt-4" id="jobs">
+    <h2>Available Jobs</h2>
+    <div class="filter-section">
+        <input type="text" id="searchBar" class="form-control mb-3" placeholder="Search jobs...">
+        <select id="filterType" class="form-control mb-3">
+            <option value="all">All Jobs</option>
+            <option value="full-time">Full-Time</option>
+            <option value="part-time">Part-Time</option>
+            <option value="freelance">Freelance</option>
+            <option value="gig">Gig</option>
+        </select>
+        <button class="btn btn-primary" onclick="sortJobs('title')">Sort by Title</button>
+        <button class="btn btn-primary" onclick="sortJobs('company')">Sort by Company</button>
+    </div>
+    <div class="row" id="jobList"></div>
+</div>
+
+<!-- User Profile Section -->
+<div class="container mt-4" id="profile">
+    <h2>User Profile</h2>
+    <div class="mb-3">
+        <img id="profileImage" src="https://via.placeholder.com/100" class="profile-pic" alt="Profile Picture">
+    </div>
+    <input type="text" id="userName" class="form-control mb-2" placeholder="Your Name">
+    <input type="email" id="userEmail" class="form-control mb-2" placeholder="Your Email">
+    <input type="file" id="profilePicture" class="form-control mb-2">
+    <textarea id="userBio" class="form-control mb-2" placeholder="Short Bio or Portfolio"></textarea>
+    <button class="btn btn-primary">Update Profile</button>
+</div>
+
+<!-- Messages Section -->
+<div class="container mt-4" id="messages">
+    <h2>Messages</h2>
+    <textarea id="messageBox" class="form-control mb-2" placeholder="Write a message..."></textarea>
+    <button class="btn btn-primary">Send</button>
+</div>
+
+<!-- Admin Panel -->
+<div class="container mt-4" id="admin">
+    <h2>Admin Panel</h2>
+    <input type="text" id="jobTitle" class="form-control mb-2" placeholder="Job Title">
+    <input type="text" id="companyName" class="form-control mb-2" placeholder="Company Name">
+    <input type="text" id="jobImage" class="form-control mb-2" placeholder="Image URL">
+    <select id="jobType" class="form-control mb-2">
+        <option value="full-time">Full-Time</option>
+        <option value="part-time">Part-Time</option>
+        <option value="freelance">Freelance</option>
+        <option value="gig">Gig</option>
+    </select>
+    <button class="btn btn-primary" onclick="addJob()">Add Job</button>
+</div>
+
+<!-- Dashboard Section -->
+<div class="container mt-4" id="dashboard">
+    <h2>Dashboard</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <canvas id="jobChart"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="appChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    let jobs = [
+        { title: "Freelance Web Developer", company: "Upwork", type: "freelance", image: "https://via.placeholder.com/150", status: "Open" },
+        { title: "Part-Time Data Entry", company: "Freelancer", type: "part-time", image: "https://via.placeholder.com/150", status: "Open" },
+        { title: "Gig Delivery Driver", company: "Uber Eats", type: "gig", image: "https://via.placeholder.com/150", status: "Closed" }
+    ];
+
+    // Function to display jobs
+    function displayJobs() {
+        let jobList = document.getElementById("jobList");
+        let filterType = document.getElementById("filterType").value;
+        jobList.innerHTML = "";
+        jobs.filter(job => filterType === "all" || job.type === filterType)
+            .forEach((job, index) => {
+                jobList.innerHTML += `
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <img src="${job.image}" class="card-img-top">
+                            <div class="card-body">
+                                <h5 class="card-title">${job.title}</h5>
+                                <p class="card-text">${job.company}</p>
+                                <span class="application-status">${job.status}</span>
+                                <button class="btn btn-success">Apply</button>
+                                <button class="btn btn-danger" onclick="removeJob(${index})">Remove</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+    }
+
+    // Function to remove a job
+    function removeJob(index) {
+        jobs.splice(index, 1);
+        displayJobs();
+    }
+
+    // Function to add a job (Admin Panel)
+    function addJob() {
+        let title = document.getElementById("jobTitle").value;
+        let company = document.getElementById("companyName").value;
+        let image = document.getElementById("jobImage").value;
+        let type = document.getElementById("jobType").value;
+        
+        jobs.push({ title, company, type, image, status: "Open" });
+        displayJobs();
+    }
+
+    // Function to search jobs
+    document.getElementById("searchBar").addEventListener("input", function () {
+        let searchValue = this.value.toLowerCase();
+        let jobList = document.getElementById("jobList");
+        jobList.innerHTML = "";
+        jobs.filter(job =>
+            job.title.toLowerCase().includes(searchValue) ||
+            job.company.toLowerCase().includes(searchValue)
+        ).forEach((job, index) => {
+            jobList.innerHTML += `
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <img src="${job.image}" class="card-img-top">
+                        <div class="card-body">
+                            <h5 class="card-title">${job.title}</h5>
+                            <p class="card-text">${job.company}</p>
+                            <span class="application-status">${job.status}</span>
+                            <button class="btn btn-success">Apply</button>
+                            <button class="btn btn-danger" onclick="removeJob(${index})">Remove</button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+    });
+
+    // Function to update job list sorting
+    function sortJobs(criteria) {
+        jobs.sort((a, b) => a[criteria].localeCompare(b[criteria]));
+        displayJobs();
+    }
+
+    // Initialize charts (Dashboard)
+    const jobChartCtx = document.getElementById('jobChart').getContext('2d');
+    const appChartCtx = document.getElementById('appChart').getContext('2d');
+    
+    const jobChart = new Chart(jobChartCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Freelance', 'Part-Time', 'Gig'],
+            datasets: [{
+                label: 'Job Types',
+                data: [3, 2, 1],  // Example data
+                backgroundColor: ['#007bff', '#28a745', '#ffc107']
+            }]
+        }
+    });
+
+    const appChart = new Chart(appChartCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Applied', 'Pending', 'Interview'],
+            datasets: [{
+                label: 'Application Status',
+                data: [3, 2, 1],  // Example data
+                backgroundColor: ['#007bff', '#ffc107', '#28a745']
+            }]
+        }
+    });
+
+    displayJobs(); // Display jobs initially
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
