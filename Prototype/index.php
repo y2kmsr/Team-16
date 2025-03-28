@@ -1,6 +1,9 @@
 <?php
 session_start();
 include("connect.php");
+
+$is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : True;
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -143,13 +146,20 @@ include("connect.php");
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <div class="navbar-title">Job Advertisement Portal</div>
-        <div class="navbar-buttons">
-            <button class="navbar-btn" onclick="openEmployerPortal()">For Employers</button>
-             <a href="login.php"><button class="navbar-btn">Log In</button></a>
-        </div>
+<div class="navbar">
+    <div class="navbar-title">Job Advertisement Portal</div>
+    <div class="navbar-buttons">
+        <button class="navbar-btn" onclick="openEmployerPortal()">For Employers</button>
+
+        <?php
+        if (isset($_SESSION['email']) && $is_admin === false) { 
+            echo '<a href="logout.php"><button class="navbar-btn">Sign Out</button></a>';
+        } else {
+            echo '<a href="login.php"><button class="navbar-btn">Log In</button></a>';
+        }
+        ?>
     </div>
+</div>
 
     <div class="container">
         <h1>Find a job today</h1>

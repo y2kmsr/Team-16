@@ -1,6 +1,8 @@
 <?php
 include 'connect.php';
 
+session_start();
+
 if (isset($_POST['signUp'])) {
     $firstName = $_POST['fname'];
     $lastName = $_POST['lname'];
@@ -35,15 +37,15 @@ if (isset($_POST['signIn'])) {
     $userResult = $conn->query($sql);
     $adminResult = $conn->query($sq2);
     if ($userResult->num_rows > 0) {
-        session_start();
         $row = $userResult->fetch_assoc();
         $_SESSION['email'] = $row['email'];
+        $_SESSION['is_admin'] = false;
         header("Location: index.php");
         exit();}
     if ($adminResult->num_rows > 0) {
-        session_start();
         $row = $adminResult->fetch_assoc();
         $_SESSION['email'] = $row['email'];
+        $_SESSION['is_admin'] = true;
         header("Location: admin.php");
         exit();}
 
