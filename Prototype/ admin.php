@@ -91,7 +91,7 @@ if (isset($_POST['deleteUser'])) {
 </head>
 
 <body>
-    <div class="top-bar">Job Portal Admin</div>
+    <div class="top-bar">Admin Centre</div>
     <div class="admin-container">
         <div class="sidebar">
             <h2>Navigation</h2>
