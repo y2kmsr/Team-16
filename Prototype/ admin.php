@@ -1,62 +1,83 @@
 <?php
 include 'connect.php';
 
-function generateUserTable()
-{
+// Function to get the user table HTML
+function generateUserTable() {
     global $conn;
 
-    $sql = "SELECT id, firstName, lastName FROM users";
+    $sql = "SELECT id, firstName, lastName FROM users"; // Grab user data
     $result = $conn->query($sql);
-    // query to get the id, firstName and lastName from users table
 
-    $users = [];
+    $usersList = []; // Changed variable name for variety
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $users[] = $row;
+            $usersList[] = $row;
         }
     }
-    //Array is created,checks to see if query returned any rows and adds each row to array
-    //using a loop
 
-    $table = '<table class="user-table">'; 
-    $table .= '<thead><tr><th>ID</th><th>First Name</th><th>Last Name</th></tr></thead>';
-    $table .= '<tbody>';
-    // Table is created
+    $tableHtml = '<table class="user-table">';
+    $tableHtml .= '<thead><tr><th>ID</th><th>First Name</th><th>Last Name</th></tr></thead>';
+    $tableHtml .= '<tbody>';
 
-    if ($users && is_array($users)) {
-        foreach ($users as $user) {
-            $table .= '<tr>';
-            $table .= '<td>' . htmlspecialchars($user['id']) . '</td>';
-            $table .= '<td>' . htmlspecialchars($user['firstName']) . '</td>';
-            $table .= '<td>' . htmlspecialchars($user['lastName']) . '</td>';
-            $table .= '</tr>';
+    if ($usersList && is_array($usersList)) {
+        foreach ($usersList as $user) {
+            $tableHtml .= '<tr>';
+            $tableHtml .= '<td>' . htmlspecialchars($user['id']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($user['firstName']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($user['lastName']) . '</td>';
+            $tableHtml .= '</tr>';
         }
-        // Users are added to the table
     } else {
-        $table .= '<tr><td colspan="3">No users found.</td></tr>';
+        $tableHtml .= '<tr><td colspan="3">No users found.</td></tr>';
     }
 
-    $table .= '</tbody></table>';
-    return $table;
+    $tableHtml .= '</tbody></table>';
+    return $tableHtml;
 }
 
-$userTable = ''; // Initialize
+// Placeholder for adding an admin
+function addAdmin() {
+    return "Add Admin functionality will be implemented here.";
+}
 
-if (isset($_POST['runAll'])) {
-    $userTable = generateUserTable();
-    $buttonText = "Hide Users";
-    $showTable = true;
-} elseif (isset($_POST['hideAll'])) {
-    $userTable = '';
-    $buttonText = "Show Users";
-    $showTable = false;
+// Check which page to show
+$section = isset($_GET['section']) ? $_GET['section'] : 'dashboard';
+$pageContent = ''; // Changed variable name
+
+if ($section === 'view_users') {
+    $pageContent = generateUserTable();
+} elseif ($section === 'delete_users') {
+    $pageContent = '
+        <form method="post" class="delete-form" id="deleteForm">
+            <input type="text" name="userId" placeholder="User ID" required><br>
+            <input type="text" name="firstName" placeholder="First Name" required><br>
+            <input type="text" name="lastName" placeholder="Last Name" required><br>
+            <button class="admin-btn" type="submit" name="deleteUser">Delete User</button>
+        </form>
+    ';
+} elseif ($section === 'create_admin') {
+    $pageContent = addAdmin();
 } else {
-    $buttonText = "Show Users";
-    $showTable = false;
+    $pageContent = '<p>Welcome to the Job Portal Admin Dashboard.</p>';
 }
 
-function deleteUsers() {}
+// Handle user deletion
+if (isset($_POST['deleteUser'])) {
+    $userId = $_POST['userId'];
+    $firstName = $_POST['firstName'];
+    $lastName = $_POST['lastName'];
 
+    $stmt = $conn->prepare("DELETE FROM users WHERE id = ? AND firstName = ? AND lastName = ?");
+    $stmt->bind_param("iss", $userId, $firstName, $lastName);
+
+    if ($stmt->execute()) {
+        $pageContent .= "<p>User deleted successfully!</p>";
+    } else {
+        $pageContent .= "<p>Oops, error deleting user: " . $stmt->error . "</p>";
+    }
+
+    $stmt->close();
+}
 ?>
 
 <!DOCTYPE html>
@@ -65,106 +86,36 @@ function deleteUsers() {}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .admin-container {
-            width: 90%;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .admin-container p {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .admin-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px;
-            transition: background-color 0.3s ease;
-        }
-
-        .admin-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .user-table th,
-        .user-table td {
-            border: 1px solid #ddd;
-            padding: 12px 15px;
-            text-align: left;
-        }
-
-        .user-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-
-        .user-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        .user-table tbody tr:hover {
-            background-color: #f0f0f0;
-        }
-    </style>
+    <title>Job Portal Admin</title>
+    <link rel="stylesheet" href="admin_style.css">
 </head>
 
 <body>
+    <div class="top-bar">Job Portal Admin</div>
     <div class="admin-container">
-        <p>Admin Portal</p>
-
-        <form method="post">
-            <button class="admin-btn" type="submit" name="<?php echo $showTable ? 'hideAll' : 'runAll'; ?>"><?php echo $buttonText; ?></button>
-        </form>
-
-        <?php if ($showTable) {
-            echo $userTable;
-        } ?>
-
-        <button class="admin-btn" onclick="deleteUsers()">Delete Users</button>
-        <button class="admin-btn" onclick="addAdmin()">Add Admin</button>
+        <div class="sidebar">
+            <h2>Navigation</h2>
+            <ul>
+                <li><a href="?section=dashboard">Dashboard</a></li>
+                <li>
+                    <h3>Users</h3>
+                    <ul>
+                        <li><a href="?section=view_users">View Users</a></li>
+                        <li><a href="?section=delete_users">Delete Users</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <h3>Admins</h3>
+                    <ul>
+                        <li><a href="?section=create_admin">Create Admin</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <?php echo $pageContent; ?>
+        </div>
     </div>
-
-    <script>
-        function deleteUsers() {
-            alert("Delete Users functionality will be implemented here.");
-        }
-
-        function addAdmin() {
-            alert("Add admin functionality will be implemented here.");
-        }
-    </script>
 </body>
 
 </html>
