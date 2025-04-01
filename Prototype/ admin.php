@@ -1,5 +1,12 @@
 <?php
 include 'connect.php';
+session_start();
+
+// Redirect to login if not an admin
+if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+    header("Location: login.php");
+    exit();
+}
 
 // Function to get the user table HTML
 function generateUserTable() {
@@ -8,7 +15,7 @@ function generateUserTable() {
     $sql = "SELECT id, firstName, lastName FROM users"; // Grab user data
     $result = $conn->query($sql);
 
-    $usersList = []; // Changed variable name for variety
+    $usersList = [];
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $usersList[] = $row;
@@ -42,7 +49,7 @@ function addAdmin() {
 
 // Check which page to show
 $section = isset($_GET['section']) ? $_GET['section'] : 'dashboard';
-$pageContent = ''; // Changed variable name
+$pageContent = ''; 
 
 if ($section === 'view_users') {
     $pageContent = generateUserTable();
@@ -91,7 +98,9 @@ if (isset($_POST['deleteUser'])) {
 </head>
 
 <body>
-    <div class="top-bar">Admin Centre</div>
+    <div class="top-bar">
+        Admin Centre
+    </div>
     <div class="admin-container">
         <div class="sidebar">
             <h2>Navigation</h2>
@@ -108,6 +117,12 @@ if (isset($_POST['deleteUser'])) {
                     <h3>Admins</h3>
                     <ul>
                         <li><a href="?section=create_admin">Create Admin</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <h3>Other</h3>
+                    <ul>
+                        <li><a href="index.php" target="_blank" class="go-home-link">Go to Home</a></li>
                     </ul>
                 </li>
             </ul>
