@@ -18,7 +18,7 @@ function generateUserTable() {
     $usersList = [];
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $usersList[] = $row;
+            $usersList[] = $row;    //stores it into an array
         }
     }
 
@@ -42,19 +42,69 @@ function generateUserTable() {
     return $tableHtml;
 }
 
-// Placeholder for adding an admin
+// Function to add a new admin
 function addAdmin() {
-    return "Add Admin functionality will be implemented here.";
+    global $conn;
+
+    $message = '';
+
+    // Handle form submission
+    if (isset($_POST['addAdmin'])) {
+        $firstName = $_POST['firstName'];
+        $lastName = $_POST['lastName'];
+        $email = $_POST['email'];
+        $password = $_POST['password'];
+
+        // Check if email already exists
+        $checkEmail = "SELECT * FROM admins WHERE email = ?";
+        $stmt = $conn->prepare($checkEmail);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $message = "<p class='error-message'>Error: Email address already exists.</p>";
+        } else {
+            // Insert new admin into the database
+            $insertQuery = "INSERT INTO admins (firstName, lastName, email, password) VALUES (?, ?, ?, ?)";
+            $stmt = $conn->prepare($insertQuery);
+            $stmt->bind_param("ssss", $firstName, $lastName, $email, $password);
+
+            if ($stmt->execute()) {
+                $message = "<p class='success-message'>Admin added successfully!</p>";
+            } else {
+                $message = "<p class='error-message'>Error adding admin: " . $stmt->error . "</p>";
+            }
+        }
+
+        $stmt->close();
+    }
+
+    // Form for adding a new admin
+    $form = '
+        <h3>Add New Admin</h3>
+        <form method="post" class="add-admin-form">
+            <input type="text" name="firstName" placeholder="First Name" required><br>
+            <input type="text" name="lastName" placeholder="Last Name" required><br>
+            <input type="email" name="email" placeholder="Email" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <button class="admin-btn" type="submit" name="addAdmin">Add Admin</button>
+        </form>
+    ';
+
+    return $message . $form;
 }
 
 // Check which page to show
 $section = isset($_GET['section']) ? $_GET['section'] : 'dashboard';
-$pageContent = ''; 
+$pageContent = '';
+$deleteMessage = ''; // Variable for the error message or success
 
 if ($section === 'view_users') {
     $pageContent = generateUserTable();
 } elseif ($section === 'delete_users') {
     $pageContent = '
+        <h3>Delete User</h3>
         <form method="post" class="delete-form" id="deleteForm">
             <input type="text" name="userId" placeholder="User ID" required><br>
             <input type="text" name="firstName" placeholder="First Name" required><br>
@@ -78,12 +128,30 @@ if (isset($_POST['deleteUser'])) {
     $stmt->bind_param("iss", $userId, $firstName, $lastName);
 
     if ($stmt->execute()) {
-        $pageContent .= "<p>User deleted successfully!</p>";
+        if ($stmt->affected_rows > 0) {
+            $deleteMessage = "<p class='success-message'>User deleted successfully!</p>";
+        } else {
+            $deleteMessage = "<p class='error-message'>No user found with the provided details.</p>";
+        }
     } else {
-        $pageContent .= "<p>Oops, error deleting user: " . $stmt->error . "</p>";
+        $deleteMessage = "<p class='error-message'>Error deleting user: " . $stmt->error . "</p>";
     }
 
     $stmt->close();
+
+
+    if ($section === 'delete_users') {
+        $pageContent = '
+            <h3>Delete User</h3>
+            ' . $deleteMessage . '
+            <form method="post" class="delete-form" id="deleteForm">
+                <input type="text" name="userId" placeholder="User ID" required><br>
+                <input type="text" name="firstName" placeholder="First Name" required><br>
+                <input type="text" name="lastName" placeholder="Last Name" required><br>
+                <button class="admin-btn" type="submit" name="deleteUser">Delete User</button>
+            </form>
+        ';
+    }
 }
 ?>
 
