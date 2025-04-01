@@ -50,6 +50,18 @@ body {
     background-color: #495057;
 }
 
+.go-home-link {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.go-home-link:hover {
+    background-color: #495057;
+}
+
 .main-content {
     flex: 1;
     padding: 20px;
