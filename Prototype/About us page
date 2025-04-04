@@ -1,0 +1,72 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        .navbar {
+            background-color: #007bff;
+            padding: 15px;
+            color: white;
+            font-size: 18px;
+        }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+        h1, h2 {
+            color: #007bff;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #f4f4f4;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">Job Advertisement Portal</div>
+    <div class="container">
+        <h1>About Us</h1>
+        <p>Welcome to the Job Advertisement Portal, your go-to platform for finding and offering side jobs. Whether you need help with tasks or are looking for flexible work opportunities, we connect people with employers in a simple and reliable way.</p>
+        <h2>What We Offer</h2>
+        <ul>
+            <li>Gardening</li>
+            <li>Dog Walking</li>
+            <li>House Cleaning</li>
+            <li>Babysitting</li>
+            <li>Handyman Services</li>
+            <li>Tutoring</li>
+        </ul>
+        <h2>How It Works</h2>
+        <p> People can browse available opportunities and apply for jobs that match their skills and interests. Employers can post jobs and find reliable workers to get tasks done efficiently. Our website has a login page allowing you to apply for jobs safe and easy. Also a job portal allowing you to view jobs within your area. we provide various methods of payments for example debit,credit and apple pay.  </p>
+        <h2>Our Mission</h2>
+        <p>We aim to make side jobs accessible to everyone by providing a safe, efficient, and user-friendly platform. Whether you're looking to earn extra income or find help for everyday tasks, we are here to help.</p>
+        <h2>Why Choose Us?</h2>
+        <ul>
+            <li>Easy-to-use platform</li>
+            <li>Flexible work opportunities</li>
+            <li>Wide range of job categories</li>
+            <li>Secure and trusted community</li>
+        </ul>
+    </div>
+</body>
+</html>
