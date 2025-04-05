@@ -41,7 +41,7 @@ body {
 }
 
 .secondary-nav {
-    background-color: #0056b3; /* Slightly darker shade than the primary navbar */
+    background-color: #0056b3; 
     padding: 10px 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -70,7 +70,7 @@ body {
 }
 
 .secondary-nav-link:hover {
-    background-color: #003d82; /* Darker shade on hover */
+    background-color: #003d82; 
     color: #f0f0f0;
 }
 
@@ -79,7 +79,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: calc(100vh - 110px); /* Adjusted for the height of both navbars */
+    height: calc(100vh - 110px); 
 }
 
 .search-container {
