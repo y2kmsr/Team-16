@@ -23,6 +23,7 @@ body {
 .navbar-buttons {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .navbar-btn {
