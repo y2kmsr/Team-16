@@ -47,8 +47,9 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
     <h1>Find a job today</h1>
 
     <div class="search-container">
-        <input type="text" class="search-bar" id="job-search" placeholder="Search for jobs...">
-        <select class="location-filter" id="location-filter">
+    <form action="search_results.php" method="GET">
+        <input type="text" class="search-bar" id="job-search" name="search" placeholder="Search for jobs...">
+        <select class="location-filter" id="location-filter" name="location">
             <option value="">All Locations</option>
             <option value="London">London</option>
             <option value="Manchester">Manchester</option>
@@ -57,8 +58,9 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
             <option value="Bradford">Bradford</option>
             <option value="sheffield">sheffield</option>
         </select>
-        <button class="search-btn" onclick="searchJobs()">Search</button>
-    </div>
+        <button class="search-btn" type="submit">Search</button>
+    </form>
+</div>
 
     <div class="results-container" id="results">
         <div class="job-card" data-title="Dog Walker" data-location="London">
