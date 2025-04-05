@@ -1,6 +1,9 @@
 <?php
 session_start();
 include("connect.php");
+
+// Ensure $is_admin is false by default and only true if set
+$is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? true : false;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -148,16 +151,70 @@ include("connect.php");
             margin-top: 40px;
             color: #666;
         }
+        .secondary-nav {
+         background-color: #0056b3; 
+         padding: 10px 0;
+         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+         }
+
+         .secondary-nav-list {
+         list-style: none;
+         margin: 0;
+         padding: 0;
+         display: flex;
+         justify-content: center;
+         gap: 30px;
+         }
+
+         .secondary-nav-list li {
+         display: inline;
+         }
+
+         .secondary-nav-link {
+         color: white;
+         text-decoration: none;
+         font-size: 16px;
+         font-weight: 500;
+         padding: 8px 15px;
+         border-radius: 5px;
+         transition: background-color 0.3s, color 0.3s;
+         }
+
+         .secondary-nav-link:hover {
+          background-color: #003d82; 
+          color: #f0f0f0;
+         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <div class="navbar-title">Side Jobs Portal</div>
-        <div class="navbar-buttons">
-            <button class="navbar-btn" onclick="openEmployerPortal()">Post a Job</button>
-            <a href="login.php"><button class="navbar-btn">Log In</button></a>
-        </div>
+<div class="navbar">
+    <div class="navbar-title">Job Advertisement Portal</div>
+    <div class="navbar-buttons">
+        <?php if ($is_admin === true) { ?>
+            <a href="admin.php"><button class="navbar-btn admin-portal-btn">Admin Portal</button></a>
+        <?php } ?>
+        <?php if (isset($_SESSION['email']) && !$is_admin) { ?>
+            <a href="Profile.php"><button class="navbar-btn">My Profile</button></a>
+        <?php } ?>
+        <?php
+        if (isset($_SESSION['email'])) {
+            echo '<a href="logout.php"><button class="navbar-btn">Sign Out</button></a>';
+        } else {
+            echo '<a href="login.php"><button class="navbar-btn">Log In</button></a>';
+        }
+        ?>
     </div>
+</div>
+
+<div class="secondary-nav">
+    <ul class="secondary-nav-list">
+        <li><a href="index.php" class="secondary-nav-link">Home</a></li>
+        <li><a href="search_results.php" class="secondary-nav-link">Search for Jobs</a></li>
+        <li><a href="AboutUs.php" class="secondary-nav-link">About Us</a></li>
+        <li><a href="#" class="secondary-nav-link">Contact Us</a></li>
+    </ul>
+</div>
+
 
     <div class="container">
         <div class="results-header">
