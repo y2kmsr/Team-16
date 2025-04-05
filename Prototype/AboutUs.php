@@ -1,49 +1,42 @@
+<?php
+session_start();
+
+// Ensure $is_admin is false by default and only true if set
+$is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? true : false;
+?>
 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            text-align: center;
-        }
-        .navbar {
-            background-color: #007bff;
-            padding: 15px;
-            color: white;
-            font-size: 18px;
-        }
-        .container {
-            width: 80%;
-            margin: 50px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            text-align: left;
-        }
-        h1, h2 {
-            color: #007bff;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            background: #f4f4f4;
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="about_us_style.css"> 
 </head>
-<body>
-    <div class="navbar">Job Advertisement Portal</div>
+<div class="navbar">
+    <div class="navbar-title">Job Advertisement Portal</div>
+    <div class="navbar-buttons">
+        <?php if ($is_admin === true) { ?>
+            <a href="admin.php"><button class="navbar-btn admin-portal-btn">Admin Portal</button></a>
+        <?php } ?>
+        <?php
+        if (isset($_SESSION['email'])) { 
+            echo '<a href="logout.php"><button class="navbar-btn">Sign Out</button></a>';
+        } else {
+            echo '<a href="login.php"><button class="navbar-btn">Log In</button></a>';
+        }
+        ?>
+    </div>
+</div>
+
+<div class="secondary-nav">
+    <ul class="secondary-nav-list">
+        <li><a href="index.php" class="secondary-nav-link">Home</a></li>
+        <li><a href="#" class="secondary-nav-link">Search for Jobs</a></li>
+        <li><a href="AboutUs.php" class="secondary-nav-link">About Us</a></li>
+        <li><a href="#" class="secondary-nav-link">Contact Us</a></li>
+    </ul>
+</div>
+
     <div class="container">
         <h1>About Us</h1>
         <p>Welcome to the Job Advertisement Portal, your go-to platform for finding and offering side jobs. Whether you need help with tasks or are looking for flexible work opportunities, we connect people with employers in a simple and reliable way.</p>
