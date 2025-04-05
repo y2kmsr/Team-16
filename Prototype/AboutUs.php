@@ -18,8 +18,11 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
         <?php if ($is_admin === true) { ?>
             <a href="admin.php"><button class="navbar-btn admin-portal-btn">Admin Portal</button></a>
         <?php } ?>
+        <?php if (isset($_SESSION['email']) && !$is_admin) { ?>
+            <a href="Profile.php"><button class="navbar-btn">My Profile</button></a>
+        <?php } ?>
         <?php
-        if (isset($_SESSION['email'])) { 
+        if (isset($_SESSION['email'])) {
             echo '<a href="logout.php"><button class="navbar-btn">Sign Out</button></a>';
         } else {
             echo '<a href="login.php"><button class="navbar-btn">Log In</button></a>';
