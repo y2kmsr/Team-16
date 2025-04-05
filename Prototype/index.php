@@ -2,7 +2,7 @@
 session_start();
 include("connect.php");
 
-// Ensure $is_admin is false by default and only true if explicitly set
+// Ensure $is_admin is false by default and only true if set
 $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? true : false;
 ?>
 
@@ -21,8 +21,11 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
         <?php if ($is_admin === true) { ?>
             <a href="admin.php"><button class="navbar-btn admin-portal-btn">Admin Portal</button></a>
         <?php } ?>
+        <?php if (isset($_SESSION['email']) && !$is_admin) { ?>
+            <a href="Profile.php"><button class="navbar-btn">My Profile</button></a>
+        <?php } ?>
         <?php
-        if (isset($_SESSION['email'])) { 
+        if (isset($_SESSION['email'])) {
             echo '<a href="logout.php"><button class="navbar-btn">Sign Out</button></a>';
         } else {
             echo '<a href="login.php"><button class="navbar-btn">Log In</button></a>';
@@ -34,15 +37,15 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
 <div class="secondary-nav">
     <ul class="secondary-nav-list">
         <li><a href="index.php" class="secondary-nav-link">Home</a></li>
-        <li><a href="#" class="secondary-nav-link">Search for Jobs</a></li>
-        <li><a href="AboutUs.html" class="secondary-nav-link">About Us</a></li>
+        <li><a href="Profile.php" class="secondary-nav-link">Search for Jobs</a></li>
+        <li><a href="AboutUs.php" class="secondary-nav-link">About Us</a></li>
         <li><a href="#" class="secondary-nav-link">Contact Us</a></li>
     </ul>
 </div>
 
 <div class="container">
     <h1>Find a job today</h1>
-    
+
     <div class="search-container">
         <input type="text" class="search-bar" id="job-search" placeholder="Search for jobs...">
         <select class="location-filter" id="location-filter">
@@ -56,7 +59,7 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
         </select>
         <button class="search-btn" onclick="searchJobs()">Search</button>
     </div>
-    
+
     <div class="results-container" id="results">
         <div class="job-card" data-title="Dog Walker" data-location="London">
             <div class="job-title" onclick="toggleJobDetails(this)">
@@ -87,7 +90,7 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
     function toggleJobDetails(element) {
         const card = element.parentElement;
         const details = card.querySelector('.job-details');
-        
+
         if (details.style.display === 'block') {
             details.style.display = 'none';
             card.classList.remove('expanded');
@@ -96,7 +99,7 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
             card.classList.add('expanded');
         }
     }
-    
+
     function applyForJob(title, location) {
         alert(`You are applying for the ${title} position in ${location}. This functionality will be implemented in the final project.`);
     }
@@ -106,15 +109,15 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
         const locationTerm = document.getElementById('location-filter').value;
         const jobCards = document.getElementsByClassName('job-card');
         let resultsFound = false;
-        
+
         for (let i = 0; i < jobCards.length; i++) {
             const card = jobCards[i];
             const jobTitle = card.getAttribute('data-title').toLowerCase();
             const jobLocation = card.getAttribute('data-location');
-            
+
             const titleMatch = jobTitle.includes(searchTerm);
             const locationMatch = locationTerm === '' || jobLocation === locationTerm;
-            
+
             if (titleMatch && locationMatch) {
                 card.style.display = 'block';
                 resultsFound = true;
@@ -122,15 +125,15 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
                 card.style.display = 'none';
             }
         }
-        
+
         if (!resultsFound) {
             const resultsContainer = document.getElementById('results');
-            
+
             const existingMessage = document.getElementById('no-results-message');
             if (existingMessage) {
                 existingMessage.remove();
             }
-            
+
             const message = document.createElement('p');
             message.id = 'no-results-message';
             message.textContent = 'No jobs found matching your criteria.';
