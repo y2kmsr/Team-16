@@ -34,9 +34,9 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
 <div class="secondary-nav">
     <ul class="secondary-nav-list">
         <li><a href="index.php" class="secondary-nav-link">Home</a></li>
-        <li><a href="#" class="secondary-nav-link">Search for Jobs</a></li>
+        <li><a href="search_results.php" class="secondary-nav-link">Search for Jobs</a></li>
         <li><a href="AboutUs.php" class="secondary-nav-link">About Us</a></li>
-        <li><a href="#" class="secondary-nav-link">Contact Us</a></li>
+        <li><a href="ContactUs.php" class="secondary-nav-link">Contact Us</a></li>
     </ul>
 </div>
 
