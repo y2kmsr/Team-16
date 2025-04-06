@@ -8,6 +8,27 @@ if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     exit();
 }
 
+// Retrieve the admin's ID
+$admin_id = null;
+if (isset($_SESSION['email'])) {
+    $email = $_SESSION['email'];
+    $stmt = $conn->prepare("SELECT id FROM admins WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $admin_id = $row['id'];
+    }
+    $stmt->close();
+}
+
+// Redirect to login if admin_id couldn't be retrieved
+if ($admin_id === null) {
+    header("Location: login.php");
+    exit();
+}
+
 // Function to get the user table HTML
 function generateUserTable() {
     global $conn;
@@ -95,12 +116,132 @@ function addAdmin() {
     return $message . $form;
 }
 
+// Function to generate the enquiries table
+function generateEnquiriesTable() {
+    global $conn;
+
+    $sql = "SELECT * FROM enquiries WHERE Resolved = 0";
+    $result = $conn->query($sql);
+
+    $tableHtml = '<form method="post" class="update-form">';
+    $tableHtml .= '<table class="enquiries-table">';
+    $tableHtml .= '<thead><tr><th>ID</th><th>Enquiry</th><th>Email</th><th>Phone Number</th><th>Enquiry Handled</th></tr></thead>';
+    $tableHtml .= '<tbody>';
+
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $tableHtml .= '<tr>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['EnquiryID']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['Enquiry']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['Email']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['PhoneNumber']) . '</td>';
+            $tableHtml .= '<td><input type="checkbox" name="enquiries[]" value="' . $row['EnquiryID'] . '"></td>';
+            $tableHtml .= '</tr>';
+        }
+    } else {
+        $tableHtml .= '<tr><td colspan="5">No unresolved enquiries found.</td></tr>';
+    }
+
+    $tableHtml .= '</tbody></table>';
+    $tableHtml .= '<button class="admin-btn" type="submit" name="updateEnquiries">Update List</button>';
+    $tableHtml .= '</form>';
+
+    return $tableHtml;
+}
+
+// Function to generate the complaints table
+function generateComplaintsTable() {
+    global $conn;
+
+    $sql = "SELECT * FROM complaints WHERE Resolved = 0";
+    $result = $conn->query($sql);
+
+    $tableHtml = '<form method="post" class="update-form">';
+    $tableHtml .= '<table class="complaints-table">';
+    $tableHtml .= '<thead><tr><th>ID</th><th>Description</th><th>Date</th><th>Type</th><th>Report Handled</th></tr></thead>';
+    $tableHtml .= '<tbody>';
+
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $tableHtml .= '<tr>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['Complaint_id']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['description']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['ComplaintDate']) . '</td>';
+            $tableHtml .= '<td>' . htmlspecialchars($row['TypeOfComplaint']) . '</td>';
+            $tableHtml .= '<td><input type="checkbox" name="complaints[]" value="' . $row['Complaint_id'] . '"></td>';
+            $tableHtml .= '</tr>';
+        }
+    } else {
+        $tableHtml .= '<tr><td colspan="5">No unresolved complaints found.</td></tr>';
+    }
+
+    $tableHtml .= '</tbody></table>';
+    $tableHtml .= '<button class="admin-btn" type="submit" name="updateComplaints">Update List</button>';
+    $tableHtml .= '</form>';
+
+    return $tableHtml;
+}
+
+// Handle enquiries update
+if (isset($_POST['updateEnquiries'])) {
+    $selectedEnquiries = isset($_POST['enquiries']) ? $_POST['enquiries'] : [];
+    if (!empty($selectedEnquiries)) {
+        $ids = implode(',', array_map('intval', $selectedEnquiries));
+        $sql = "UPDATE enquiries SET Resolved = 1 WHERE EnquiryID IN ($ids)";
+        $conn->query($sql);
+    }
+    header("Location: admin.php?section=enquiries");
+    exit();
+}
+
+// Handle complaints update
+if (isset($_POST['updateComplaints'])) {
+    $selectedComplaints = isset($_POST['complaints']) ? $_POST['complaints'] : [];
+    if (!empty($selectedComplaints)) {
+        $ids = implode(',', array_map('intval', $selectedComplaints));
+        $sql = "UPDATE complaints SET Resolved = 1 WHERE Complaint_id IN ($ids)";
+        $conn->query($sql);
+    }
+    header("Location: admin.php?section=complaints");
+    exit();
+}
+
+// Handle moving resolved items
+if (isset($_POST['moveResolved'])) {
+    // Move resolved enquiries
+    $stmt = $conn->prepare("INSERT INTO resolved (type, original_id, data, admin_id) 
+                            SELECT 'enquiry', EnquiryID, JSON_OBJECT('Enquiry', Enquiry, 'Email', Email, 'PhoneNumber', PhoneNumber), ? 
+                            FROM enquiries WHERE Resolved = 1");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $stmt->close();
+    $conn->query("DELETE FROM enquiries WHERE Resolved = 1");
+
+    // Move resolved complaints
+    $stmt = $conn->prepare("INSERT INTO resolved (type, original_id, data, admin_id) 
+                            SELECT 'complaint', Complaint_id, JSON_OBJECT('description', description, 'ComplaintDate', ComplaintDate, 'TypeOfComplaint', TypeOfComplaint), ? 
+                            FROM complaints WHERE Resolved = 1");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $stmt->close();
+    $conn->query("DELETE FROM complaints WHERE Resolved = 1");
+}
+
 // Check which page to show
 $section = isset($_GET['section']) ? $_GET['section'] : 'dashboard';
 $pageContent = '';
 $deleteMessage = ''; // Variable for the error message or success
 
-if ($section === 'view_users') {
+if ($section === 'dashboard') {
+    // Count unresolved enquiries and complaints
+    $enquiriesCount = $conn->query("SELECT COUNT(*) FROM enquiries WHERE Resolved = 0")->fetch_row()[0];
+    $complaintsCount = $conn->query("SELECT COUNT(*) FROM complaints WHERE Resolved = 0")->fetch_row()[0];
+    $totalUnresolved = $enquiriesCount + $complaintsCount;
+
+    $pageContent = "<p>Welcome to the Job Portal Admin Dashboard.</p>";
+    $pageContent .= "<p class='alert'>There are $totalUnresolved unresolved items (Enquiries: $enquiriesCount, Complaints: $complaintsCount).</p>";
+    $pageContent .= '<form method="post"><button class="admin-btn" type="submit" name="moveResolved">Move All Resolved to Resolved Table</button></form>';
+} elseif ($section === 'view_users') {
     $pageContent = generateUserTable();
 } elseif ($section === 'delete_users') {
     $pageContent = '
@@ -114,6 +255,10 @@ if ($section === 'view_users') {
     ';
 } elseif ($section === 'create_admin') {
     $pageContent = addAdmin();
+} elseif ($section === 'enquiries') {
+    $pageContent = generateEnquiriesTable();
+} elseif ($section === 'complaints') {
+    $pageContent = generateComplaintsTable();
 } else {
     $pageContent = '<p>Welcome to the Job Portal Admin Dashboard.</p>';
 }
@@ -138,7 +283,6 @@ if (isset($_POST['deleteUser'])) {
     }
 
     $stmt->close();
-
 
     if ($section === 'delete_users') {
         $pageContent = '
@@ -179,6 +323,8 @@ if (isset($_POST['deleteUser'])) {
                     <ul>
                         <li><a href="?section=view_users">View Users</a></li>
                         <li><a href="?section=delete_users">Delete Users</a></li>
+                        <li><a href="?section=enquiries">Enquiries</a></li>
+                        <li><a href="?section=complaints">Complaints</a></li>
                     </ul>
                 </li>
                 <li>
