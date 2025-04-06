@@ -1,132 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Page</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body, html {
-            background-color: white;
-            color: white;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 400px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        .container h2 {
-            color: black;
-        }
-        .input-field {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            color: black;
-        }
-        .button {
-            background-color: blue;
-            color: white;
-            padding: 15px;
-            border: none;
-            cursor: pointer;
-            margin: 10px;
-            font-size: 16px;
-            width: 100%;
-        }
-        .popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            width: 300px;
-            text-align: center;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-        }
-        .popup h3 {
-            color: black;
-        }
-        .close-btn {
-            background: red;
-            color: white;
-            border: none;
-            padding: 10px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .input-field {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 15px;
+      width: 100%;
+      font-size: 16px;
+      margin-top: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    #paypal-button-container {
+      margin-top: 20px;
+    }
+  </style>
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <!-- PayPal SDK (sandbox mode- change to clients own paypal when available) -->
+  <script src="https://www.paypal.com/sdk/js?client-id=sb"></script>
 </head>
 <body>
-    <div class="container">
-        <h2>Make a Payment</h2>
-        <form>
-            <input type="text" class="input-field" placeholder="Full Name" required>
-            <input type="email" class="input-field" placeholder="Email" required>
-            <input type="text" class="input-field" placeholder="Address" required>
-            <input type="text" class="input-field" placeholder="City" required>
-            <input type="text" class="input-field" placeholder="Postal Code" required>
-            <button type="button" class="button" onclick="openPopup('card')">Pay with Card</button>
-            <button type="button" class="button" onclick="openPopup('paypal')">Pay with PayPal</button>
-        </form>
-    </div>
+  <div class="container">
+    <h2>Make a Payment</h2>
+    <form>
+      <input type="text" class="input-field" placeholder="Full Name" required>
+      <input type="email" class="input-field" placeholder="Email" required>
+      <input type="text" class="input-field" placeholder="Address" required>
+      <input type="text" class="input-field" placeholder="City" required>
+      <input type="text" class="input-field" placeholder="Postal Code" required>
+      <button type="button" class="button" onclick="redirectToStripe()">Pay with Card</button>
+    </form>
+    <div id="paypal-button-container"></div>
+  </div>
 
-    <!-- Overlay for Popup -->
-    <div id="overlay" class="overlay" onclick="closePopup()"></div>
+  <script>
+    // Redirect to Stripe Checkout (replace with the clients checkout link)
+    function redirectToStripe() {
+      window.location.href = "https://buy.stripe.com/test_a1b2c3d4e5f6g7h8i9";
+    }
 
-    <!-- Payment Popup -->
-    <div id="paymentPopup" class="popup">
-        <h3 id="popupTitle">Enter Payment Details</h3>
-        <input type="text" class="input-field" placeholder="Card Number" id="cardDetails" style="display: none;">
-        <button class="button" onclick="closePopup()">Confirm Payment</button>
-        <button class="close-btn" onclick="closePopup()">Close</button>
-    </div>
-
-    <script>
-        function openPopup(method) {
-            document.getElementById('paymentPopup').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            if (method === 'card') {
-                document.getElementById('popupTitle').innerText = 'Enter Card Details';
-                document.getElementById('cardDetails').style.display = 'block';
-            } else {
-                document.getElementById('popupTitle').innerText = 'Proceed to PayPal';
-                document.getElementById('cardDetails').style.display = 'none';
+    // Render PayPal Button
+    paypal.Buttons({
+      createOrder: function(data, actions) {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: '20.00'
             }
-        }
-
-        function closePopup() {
-            document.getElementById('paymentPopup').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        }
-    </script>
+          }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          alert('Payment completed by ' + details.payer.name.given_name);
+          window.location.href = "/success";
+        });
+      }
+    }).render('#paypal-button-container');
+  </script>
 </body>
 </html>
