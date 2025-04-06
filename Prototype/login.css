@@ -1,69 +1,81 @@
-/*style sheet for login and sign up form*/
-
 body {
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f4f4f4;
 }
 
 .container {
-    background-color: #fff;
+    background-color: white;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 350px;
-    margin: 10px; 
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
 }
 
 .form-title {
-    text-align: center;
+    color: #007bff;
     margin-bottom: 20px;
 }
 
 .input-group {
-    position: relative;
     margin-bottom: 15px;
+    position: relative;
 }
 
-.input-group input {
+.input-group input,
+.input-group textarea {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 5px;
+    font-size: 1rem;
     box-sizing: border-box;
-    padding-left: 10px;
 }
 
 .input-group label {
     position: absolute;
-    left: 10px;
     top: 10px;
+    left: 10px;
+    color: #666;
+    font-size: 1rem;
+    transition: all 0.2s;
     pointer-events: none;
-    transition: 0.2s ease all;
-    background-color: white;
-    padding: 0 5px;
-    color: #999;
 }
 
 .input-group input:focus + label,
 .input-group input:not(:placeholder-shown) + label {
-    top: -8px;
-    font-size: 12px;
+    top: -10px;
+    left: 5px;
+    font-size: 0.8rem;
     color: #007bff;
+    background-color: white;
+    padding: 0 5px;
+}
+
+.error {
+    color: #721c24;
+    font-size: 0.8rem;
+    text-align: left;
+    margin-top: 5px;
+    display: block;
 }
 
 .btn {
     background-color: #007bff;
     color: white;
-    padding: 10px 15px;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 10px;
+    border-radius: 5px;
     width: 100%;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 .btn:hover {
@@ -71,24 +83,23 @@ body {
 }
 
 .links {
-    text-align: center;
-    margin-top: 20px;
+    margin-top: 15px;
 }
 
 .links p {
-    margin-bottom: 10px;
+    margin: 0;
+    color: #666;
 }
 
-#signInButton, #signUpButton {
+.links button {
     background: none;
     border: none;
-    padding: 0;
-    font: inherit;
-    color: #007bff; 
-    text-decoration: underline; 
+    color: #007bff;
     cursor: pointer;
+    font-size: 1rem;
+    text-decoration: underline;
 }
 
-#signInButton:hover, #signUpButton:hover {
-    color: #0056b3; /
+.links button:hover {
+    color: #0056b3;
 }
