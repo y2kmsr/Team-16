@@ -129,7 +129,7 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-// Predefined list of locations
+// Predefined list of locations (not needed anymore for the edit form, but keeping for consistency)
 $locations = [
     "London",
     "Manchester",
@@ -258,7 +258,6 @@ $locations = [
                         echo '<div class="job-card">';
                         echo '<h3>' . htmlspecialchars($row['title']) . '</h3>';
                         echo '<p>Status: ' . $status_text . '</p>';
-                        echo '<button class="btn btn-primary me-2" onclick="showEditForm(' . $row['job_id'] . ')" ' . $disabled . ' data-bs-toggle="modal" data-bs-target="#editModal">Edit Listing</button>';
                         echo '<button class="btn btn-danger" onclick="deleteListing(' . $row['job_id'] . ')" ' . $disabled . '>Delete Listing</button>';
                         echo '</div>';
                     }
@@ -267,52 +266,6 @@ $locations = [
                 }
                 $stmt->close();
                 ?>
-                <!-- Edit Listing Modal -->
-                <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="editModalLabel">Edit Listing</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form id="editForm" method="POST" action="edit_listing.php" onsubmit="return validateDescription('editDescription')">
-                                    <input type="hidden" name="job_id" id="editJobId">
-                                    <div class="mb-3">
-                                        <label for="editTitle">Job Title</label>
-                                        <input type="text" name="title" id="editTitle" class="form-control" placeholder="Job Title" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="editLocation">Location</label>
-                                        <select name="location" id="editLocation" class="form-control" required>
-                                            <option value="" disabled>Select Location</option>
-                                            <?php foreach ($locations as $loc) { ?>
-                                                <option value="<?php echo htmlspecialchars($loc); ?>"><?php echo htmlspecialchars($loc); ?></option>
-                                            <?php } ?>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="editDescription">Description (max 400 words)</label>
-                                        <textarea name="description" id="editDescription" class="form-control" placeholder="Description" required oninput="updateWordCount(this, 'editWordCount')"></textarea>
-                                        <div id="editWordCount" class="word-count">0/400 words</div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="editSalary">Salary</label>
-                                        <input type="text" name="salary" id="editSalary" class="form-control" placeholder="Salary" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="editRequirements">Requirements (comma-separated)</label>
-                                        <textarea name="requirements" id="editRequirements" class="form-control" placeholder="Requirements" required></textarea>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn-save">Save Changes</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Accept Applicant Section -->
@@ -502,34 +455,6 @@ $locations = [
             document.getElementById(linkId).classList.add('active');
         }
 
-        // Function to show the edit form for a listing
-        function showEditForm(jobId) {
-            fetch(`get_listing.php?id=${jobId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status} (${response.statusText})`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    document.getElementById('editJobId').value = jobId;
-                    document.getElementById('editTitle').value = data.title;
-                    document.getElementById('editLocation').value = data.location;
-                    document.getElementById('editDescription').value = data.description;
-                    document.getElementById('editSalary').value = data.salary;
-                    document.getElementById('editRequirements').value = JSON.parse(data.requirements).join(', ');
-                    updateWordCount(document.getElementById('editDescription'), 'editWordCount');
-                })
-                .catch(error => {
-                    console.error('Error fetching listing:', error);
-                    alert(`Failed to load listing details: ${error.message}. Please try again.`);
-                });
-        }
-
         // Function to delete a listing
         function deleteListing(jobId) {
             if (confirm('Are you sure you want to delete this listing?')) {
@@ -551,34 +476,7 @@ $locations = [
             }
         }
 
-        // Function to update word count for description
-        function updateWordCount(textarea, counterId) {
-            const text = textarea.value;
-            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-            const wordCount = words.length;
-            const counter = document.getElementById(counterId);
-            counter.textContent = `${wordCount}/400 words`;
-            if (wordCount > 400) {
-                counter.classList.add('error');
-            } else {
-                counter.classList.remove('error');
-            }
-        }
-
-        // Function to validate description word count
-        function validateDescription(fieldId) {
-            const textarea = document.getElementById(fieldId);
-            const text = textarea.value;
-            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-            const wordCount = words.length;
-            if (wordCount > 400) {
-                alert('Description exceeds 400 words. Please shorten it.');
-                return false;
-            }
-            return true;
-        }
-
-        // Attach event listeners
+        // Attach event listeners after the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('dashboardLink').addEventListener('click', function(e) {
                 e.preventDefault();
