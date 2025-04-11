@@ -4,187 +4,114 @@ include("connect.php");
 
 // Ensure $is_admin is false by default and only true if set
 $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? true : false;
+
+// Fetch user ID if logged in
+$user_id = null;
+if (isset($_SESSION['email'])) {
+    $email = $_SESSION['email'];
+    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $user_id = $row['id'];
+        $_SESSION['user_id'] = $user_id; // Store user_id in session for later use
+    }
+    $stmt->close();
+}
+
+// Get filter values from URL
+$searchTerm = isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '';
+$locationTerm = isset($_GET['location']) ? htmlspecialchars($_GET['location']) : '';
+$payRange = isset($_GET['pay']) ? htmlspecialchars($_GET['pay']) : '';
+
+// Fetch job listings from the database with filters applied
+$sql = "SELECT * FROM job_listings WHERE admin_approval = 1 AND status = 1";
+$conditions = [];
+$params = [];
+$types = "";
+
+// Apply search term filter
+if (!empty($searchTerm)) {
+    $conditions[] = "(title LIKE ? OR description LIKE ?)";
+    $searchWild = "%$searchTerm%";
+    $params[] = $searchWild;
+    $params[] = $searchWild;
+    $types .= "ss";
+}
+
+// Apply location filter
+if (!empty($locationTerm)) {
+    $conditions[] = "location = ?";
+    $params[] = $locationTerm;
+    $types .= "s";
+}
+
+// Apply pay range filter
+if (!empty($payRange)) {
+    $payRanges = [
+        '5-10' => [5, 10],
+        '10-20' => [10, 20],
+        '20-70' => [20, 70],
+        '70-200' => [70, 200],
+        '200-1000' => [200, 1000]
+    ];
+    if (isset($payRanges[$payRange])) {
+        $min = $payRanges[$payRange][0];
+        $max = $payRanges[$payRange][1];
+        // Extract numeric part of salary for comparison
+        $conditions[] = "CAST(REPLACE(salary, '£', '') AS DECIMAL) BETWEEN ? AND ?";
+        $params[] = $min;
+        $params[] = $max;
+        $types .= "ii";
+    }
+}
+
+// Build the final query
+if (!empty($conditions)) {
+    $sql .= " AND " . implode(" AND ", $conditions);
+}
+$sql .= " ORDER BY job_id DESC";
+
+$stmt = $conn->prepare($sql);
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+$jobListings = [];
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $row['requirements'] = json_decode($row['requirements'], true); 
+        $jobListings[] = $row;
+    }
+}
+$stmt->close();
+
+// Predefined list of locations
+$locations = [
+    "London",
+    "Manchester",
+    "Birmingham",
+    "Leeds",
+    "Sheffield",
+    "Bristol",
+    "Liverpool",
+    "Newcastle",
+    "Glasgow",
+    "Edinburgh"
+];
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Side Jobs Search Results</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            text-align: center;
-        }
-        .navbar {
-            background-color: #007bff;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: white;
-        }
-        .navbar-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .navbar-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        .navbar-btn {
-            background-color: white;
-            color: #007bff;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .navbar-btn:hover {
-            background-color: #f0f0f0;
-        }
-        .container {
-            width: 80%;
-            margin: 20px auto;
-            padding: 20px;
-        }
-        .search-container {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .search-bar {
-            width: 70%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px 0 0 5px;
-        }
-        .search-btn {
-            padding: 10px 15px;
-            font-size: 16px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            border-radius: 0 5px 5px 0;
-        }
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .results-title {
-            font-size: 24px;
-            text-align: left;
-        }
-        .back-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .back-btn:hover {
-            background-color: #0056b3;
-        }
-        .job-card {
-            background-color: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            text-align: left;
-        }
-        .job-title {
-            font-weight: bold;
-            color: #007bff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        .job-location {
-            color: #666;
-            font-style: italic;
-        }
-        .job-description {
-            margin-top: 10px;
-        }
-        .job-details {
-            display: none;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-        .expand-icon {
-            font-size: 20px;
-            transition: transform 0.3s ease;
-        }
-        .expanded .expand-icon {
-            transform: rotate(180deg);
-        }
-        .apply-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background-color 0.3s;
-        }
-        .apply-btn:hover {
-            background-color: #0056b3;
-        }
-        .no-results {
-            text-align: center;
-            margin-top: 40px;
-            color: #666;
-        }
-        .secondary-nav {
-         background-color: #0056b3; 
-         padding: 10px 0;
-         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-         }
-
-         .secondary-nav-list {
-         list-style: none;
-         margin: 0;
-         padding: 0;
-         display: flex;
-         justify-content: center;
-         gap: 30px;
-         }
-
-         .secondary-nav-list li {
-         display: inline;
-         }
-
-         .secondary-nav-link {
-         color: white;
-         text-decoration: none;
-         font-size: 16px;
-         font-weight: 500;
-         padding: 8px 15px;
-         border-radius: 5px;
-         transition: background-color 0.3s, color 0.3s;
-         }
-
-         .secondary-nav-link:hover {
-          background-color: #003d82; 
-          color: #f0f0f0;
-         }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="search_results_style.css">
 </head>
 <body>
 <div class="navbar">
@@ -209,201 +136,212 @@ $is_admin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true ? tru
 <div class="secondary-nav">
     <ul class="secondary-nav-list">
         <li><a href="index.php" class="secondary-nav-link">Home</a></li>
-        <li><a href="search_results.php" class="secondary-nav-link">Search for Jobs</a></li>
+        <li><a href="search_results.php" class="secondary-nav-link active">Search for Jobs</a></li>
         <li><a href="AboutUs.php" class="secondary-nav-link">About Us</a></li>
         <li><a href="ContactUs.php" class="secondary-nav-link">Contact Us</a></li>
     </ul>
 </div>
 
+<div class="container">
+    <div id="jobPostingForm" style="display: none;" class="job-posting-form">
+        <h2>Post a New Job</h2>
+        <form method="POST" action="post_job.php" onsubmit="return validateDescription('description')">
+            <input type="text" name="title" placeholder="Job Title" required>
+            <select name="location" required>
+                <option value="" disabled selected>Select Location</option>
+                <?php foreach ($locations as $loc) { ?>
+                    <option value="<?php echo htmlspecialchars($loc); ?>"><?php echo htmlspecialchars($loc); ?></option>
+                <?php } ?>
+            </select>
+            <textarea name="description" id="description" placeholder="Description (max 400 words)" required oninput="updateWordCount(this, 'wordCount')"></textarea>
+            <div id="wordCount" class="word-count">0/400 words</div>
+            <input type="text" name="salary" placeholder="Salary (e.g., £500)" required>
+            <textarea name="requirements" placeholder="Requirements (comma-separated)" required></textarea>
+            <input type="hidden" name="lister_id" value="<?php echo $user_id ?? 2; ?>">
+            <button type="submit" class="apply-btn">Submit Job</button>
+        </form>
+    </div>
 
-    <div class="container">
-        <div class="results-header">
-            <div class="results-title">
-                <?php
-                $searchTerm = isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '';
-                $locationTerm = isset($_GET['location']) ? htmlspecialchars($_GET['location']) : '';
-                
-                echo "Search Results";
-                if (!empty($searchTerm) || !empty($locationTerm)) {
-                    echo " for";
-                    if (!empty($searchTerm)) {
-                        echo " \"$searchTerm\"";
-                    }
-                    if (!empty($locationTerm)) {
-                        echo " in $locationTerm";
-                    }
-                }
-                ?>
-            </div>
-            <a href="index.php"><button class="back-btn">Back to Search</button></a>
-        </div>
-        
-        <div class="search-container">
-            <form action="search_results.php" method="GET">
-                <input type="text" class="search-bar" id="job-search" name="search" placeholder="Search for side jobs..." value="<?php echo $searchTerm; ?>">
-                <?php if (!empty($locationTerm)): ?>
-                <input type="hidden" name="location" value="<?php echo $locationTerm; ?>">
-                <?php endif; ?>
-                <button class="search-btn" type="submit">Search</button>
-            </form>
-        </div>
-        
-        <div class="results-container" id="results">
+    <div class="results-header">
+        <div class="results-title">
             <?php
-            // we would fetch job listings from the database
-            // i simulated with static side job listings
-            $jobListings = [
-                [
-                    'title' => 'Dog Walker',
-                    'location' => 'London',
-                    'description' => 'I am looking for a patient dog walker that can handle my energetic dog.',
-                    'salary' => '£15 per hour',
-                    'hours' => 'Weekdays, 1-2 hours between 12pm-3pm',
-                    'requirements' => [
-                        'Experience with energetic dogs',
-                        'Able to walk dogs in all weather conditions',
-                        'Reliable and punctual',
-                        'Lives in London or surrounding areas'
-                    ],
-                    'full_description' => 'We have a 3-year-old Siberian Husky who needs daily walks. The ideal candidate will have experience with high-energy breeds and be able to provide consistent exercise and companionship. The schedule is flexible but must include weekday afternoons.'
-                ],
-                [
-                    'title' => 'Babysitter',
-                    'location' => 'Manchester',
-                    'description' => 'Looking for a reliable babysitter for two children (5 and 8 years old) for evenings and occasional weekends.',
-                    'salary' => '£12 per hour',
-                    'hours' => 'Evenings and occasional weekends',
-                    'requirements' => [
-                        'Previous childcare experience',
-                        'First aid certification preferred',
-                        'Energetic and patient',
-                        'Able to help with homework'
-                    ],
-                    'full_description' => 'Our family is looking for a responsible and caring individual to look after our two children. Duties include preparing meals, helping with homework, bedtime routines, and engaging in age-appropriate activities. References required.'
-                ],
-                [
-                    'title' => 'Lawn Mowing & Garden Maintenance',
-                    'location' => 'Birmingham',
-                    'description' => 'Need someone to maintain our lawn and garden weekly during the growing season.',
-                    'salary' => '£14 per hour or £25 per visit',
-                    'hours' => 'Weekly, approximately 2 hours per visit',
-                    'requirements' => [
-                        'Own gardening equipment preferred',
-                        'Knowledge of basic garden maintenance',
-                        'Reliable and consistent',
-                        'Available on weekends'
-                    ],
-                    'full_description' => 'We need help maintaining our medium-sized garden including lawn mowing, weeding, and basic pruning. The job requires approximately 2 hours per week, typically on weekends. We can provide some equipment but prefer if you have your own lawn mower.'
-                ],
-                [
-                    'title' => 'Pet Sitting',
-                    'location' => 'Leeds',
-                    'description' => 'Looking for a pet sitter for our cat and two small dogs while we are on vacation.',
-                    'salary' => '£20 per day',
-                    'hours' => 'Two visits per day, 30 minutes each',
-                    'requirements' => [
-                        'Experience with cats and small dogs',
-                        'Responsible and trustworthy',
-                        'Lives nearby',
-                        'Available for the last two weeks of August'
-                    ],
-                    'full_description' => 'We need someone to feed, walk, and spend time with our pets while we are away on vacation. The job involves visiting our home twice daily (morning and evening) to feed our animals, walk the dogs, and provide some companionship. Must be comfortable with administering medication to one of our dogs.'
-                ],
-                [
-                    'title' => 'Grocery Shopping Assistant',
-                    'location' => 'Sheffield',
-                    'description' => 'Seeking help with weekly grocery shopping for an elderly couple.',
-                    'salary' => '£12 per hour plus travel expenses',
-                    'hours' => 'Once a week, approximately 2-3 hours',
-                    'requirements' => [
-                        'Driver\'s license and own vehicle',
-                        'Patient and respectful',
-                        'Attention to detail',
-                        'Available on weekday mornings'
-                    ],
-                    'full_description' => 'An elderly couple needs assistance with their weekly grocery shopping. The job involves picking up a shopping list from their home, going to the supermarket, purchasing the items, and delivering them back to their home. Candidate must be patient, respectful, and have their own transportation.'
-                ],
-                [
-                    'title' => 'Tutoring - Math & Science',
-                    'location' => 'London',
-                    'description' => 'Looking for a tutor for GCSE level Math and Science for my 15-year-old son.',
-                    'salary' => '£20 per hour',
-                    'hours' => 'Twice weekly, 1.5 hours per session',
-                    'requirements' => [
-                        'Strong knowledge of GCSE Math and Science curriculum',
-                        'Previous tutoring experience preferred',
-                        'Patient and encouraging teaching style',
-                        'Available weekday evenings'
-                    ],
-                    'full_description' => 'We are looking for a knowledgeable and patient tutor to help our son improve his Math and Science grades for his upcoming GCSE exams. The ideal candidate will have experience with the current curriculum and be able to explain concepts clearly. Sessions would be held at our home.'
-                ]
-            ];
-            
-            $resultsFound = false;
-            
-            foreach ($jobListings as $index => $job) {
-                $titleMatch = empty($searchTerm) || stripos($job['title'], $searchTerm) !== false || stripos($job['description'], $searchTerm) !== false;
-                $locationMatch = empty($locationTerm) || stripos($job['location'], $locationTerm) !== false;
-                
-                if ($titleMatch && $locationMatch) {
-                    $resultsFound = true;
-                    ?>
-                    <div class="job-card">
-                        <div class="job-title" onclick="toggleJobDetails(this)">
-                            <span><?php echo htmlspecialchars($job['title']); ?></span>
-                            <span class="expand-icon">▼</span>
-                        </div>
-                        <div class="job-location">Location: <?php echo htmlspecialchars($job['location']); ?></div>
-                        <div class="job-description"><?php echo htmlspecialchars($job['description']); ?></div>
-                        <div class="job-details">
-                            <h3>Job Details</h3>
-                            <p><strong>Payment:</strong> <?php echo htmlspecialchars($job['salary']); ?></p>
-                            <p><strong>Hours:</strong> <?php echo htmlspecialchars($job['hours']); ?></p>
-                            <p><strong>Requirements:</strong></p>
-                            <ul>
-                                <?php foreach ($job['requirements'] as $requirement): ?>
-                                    <li><?php echo htmlspecialchars($requirement); ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                            <p><strong>Description:</strong> <?php echo htmlspecialchars($job['full_description']); ?></p>
-                            <button class="apply-btn" onclick="applyForJob('<?php echo addslashes($job['title']); ?>', '<?php echo addslashes($job['location']); ?>')">Apply Now</button>
-                        </div>
-                    </div>
-                    <?php
+            echo "Search Results";
+            if (!empty($searchTerm) || !empty($locationTerm) || !empty($payRange)) {
+                echo " for";
+                if (!empty($searchTerm)) {
+                    echo " \"$searchTerm\"";
                 }
-            }
-            
-            if (!$resultsFound) {
-                echo '<div class="no-results">
-                    <h2>No side jobs found matching your search.</h2>
-                    <p>Try using different keywords or browse all available jobs.</p>
-                </div>';
+                if (!empty($locationTerm)) {
+                    echo " in $locationTerm";
+                }
+                if (!empty($payRange)) {
+                    echo " with pay range $payRange";
+                }
             }
             ?>
         </div>
+        <div class="header-buttons">
+            <?php if (isset($_SESSION['email']) && !$is_admin) { ?>
+                <button class="floating-post-btn" onclick="showJobPostingForm()">Post a Job</button>
+            <?php } ?>
+            <a href="index.php"><button class="back-btn">Back to Search</button></a>
+        </div>
     </div>
 
-    <script>
-        function toggleJobDetails(element) {
-            const card = element.parentElement;
-            const details = card.querySelector('.job-details');
-            
-            if (details.style.display === 'block') {
-                details.style.display = 'none';
-                card.classList.remove('expanded');
-            } else {
-                details.style.display = 'block';
-                card.classList.add('expanded');
-            }
+    <div class="filter-container">
+        <div class="filter-group">
+            <label for="locationFilter">Location:</label>
+            <select id="locationFilter" onchange="applyFilters()">
+                <option value="">All Locations</option>
+                <?php foreach ($locations as $loc) { ?>
+                    <option value="<?php echo htmlspecialchars($loc); ?>" <?php echo $locationTerm === $loc ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($loc); ?>
+                    </option>
+                <?php } ?>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="payFilter">Pay Range:</label>
+            <select id="payFilter" onchange="applyFilters()">
+                <option value="">All Pay Ranges</option>
+                <option value="5-10" <?php echo $payRange === '5-10' ? 'selected' : ''; ?>>£5 - £10</option>
+                <option value="10-20" <?php echo $payRange === '10-20' ? 'selected' : ''; ?>>£10 - £20</option>
+                <option value="20-70" <?php echo $payRange === '20-70' ? 'selected' : ''; ?>>£20 - £70</option>
+                <option value="70-200" <?php echo $payRange === '70-200' ? 'selected' : ''; ?>>£70 - £200</option>
+                <option value="200-1000" <?php echo $payRange === '200-1000' ? 'selected' : ''; ?>>£200 - £1000</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <form action="search_results.php" method="GET">
+            <input type="text" class="search-bar" id="job-search" name="search" placeholder="Search for side jobs..." value="<?php echo $searchTerm; ?>">
+            <input type="hidden" name="location" value="<?php echo $locationTerm; ?>">
+            <input type="hidden" name="pay" value="<?php echo $payRange; ?>">
+            <button class="search-btn" type="submit">Search</button>
+        </form>
+    </div>
+    
+    <div class="results-container" id="results">
+        <?php
+        $resultsFound = false;
+        
+        foreach ($jobListings as $job) {
+            $resultsFound = true;
+            ?>
+            <div class="job-card" data-location="<?php echo htmlspecialchars($job['location']); ?>" data-salary="<?php echo htmlspecialchars($job['salary']); ?>">
+                <div class="job-title" onclick="toggleJobDetails(this)">
+                    <span><?php echo htmlspecialchars($job['title']); ?></span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="job-location">Location: <?php echo htmlspecialchars($job['location']); ?></div>
+                <div class="job-description"><?php echo htmlspecialchars($job['description']); ?></div>
+                <div class="job-details">
+                    <h3>Job Details</h3>
+                    <p><strong>Payment:</strong> <?php echo htmlspecialchars($job['salary']); ?></p>
+                    <p><strong>Requirements:</strong></p>
+                    <ul>
+                        <?php foreach ($job['requirements'] as $requirement): ?>
+                            <li><?php echo htmlspecialchars($requirement); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <button class="apply-btn" onclick="applyForJob('<?php echo addslashes($job['title']); ?>', '<?php echo addslashes($job['location']); ?>', <?php echo $job['job_id']; ?>)">Apply Now</button>
+                </div>
+            </div>
+            <?php
         }
         
-        function applyForJob(title, location) {
-            alert(`You are applying for the ${title} position in ${location}. This functionality will be implemented in the final project.`);
+        if (!$resultsFound) {
+            echo '<div class="no-results">
+                <h2>No side jobs found matching your search.</h2>
+                <p>Try using different keywords or browse all available jobs.</p>
+            </div>';
         }
+        ?>
+    </div>
+</div>
 
-        function openEmployerPortal() {
-            alert('Job posting functionality will be added towards the final project');
+<script>
+    function toggleJobDetails(element) {
+        const card = element.parentElement;
+        const details = card.querySelector('.job-details');
+        
+        if (details.style.display === 'block') {
+            details.style.display = 'none';
+            card.classList.remove('expanded');
+        } else {
+            details.style.display = 'block';
+            card.classList.add('expanded');
         }
-    </script>
+    }
+    
+    function applyForJob(title, location, jobId) {
+        <?php if (!isset($_SESSION['email'])) { ?>
+            alert("You must sign in or create an account");
+        <?php } else { ?>
+            if (confirm(`Are you sure you want to apply for the ${title} position in ${location}?`)) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "apply_job.php", true);
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        alert("Application submitted!");
+                        location.reload();
+                    }
+                };
+                xhr.send("job_id=" + jobId + "&user_id=" + <?php echo json_encode($user_id ?? 0); ?>);
+            }
+        <?php } ?>
+    }
+
+    function showJobPostingForm() {
+        const form = document.getElementById('jobPostingForm');
+        if (form.style.display === 'block') {
+            form.style.display = 'none';
+        } else {
+            form.style.display = 'block';
+        }
+    }
+
+    function updateWordCount(textarea, counterId) {
+        const text = textarea.value;
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        const wordCount = words.length;
+        const counter = document.getElementById(counterId);
+        counter.textContent = `${wordCount}/400 words`;
+        if (wordCount > 400) {
+            counter.classList.add('error');
+        } else {
+            counter.classList.remove('error');
+        }
+    }
+
+    function validateDescription(fieldId) {
+        const textarea = document.getElementById(fieldId);
+        const text = textarea.value;
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        const wordCount = words.length;
+        if (wordCount > 400) {
+            alert('Description exceeds 400 words. Please shorten it.');
+            return false;
+        }
+        return true;
+    }
+
+    function applyFilters() {
+        const locationFilter = document.getElementById('locationFilter').value;
+        const payFilter = document.getElementById('payFilter').value;
+        const searchTerm = document.getElementById('job-search').value;
+
+        // Update the URL with the current search term and filters
+        const params = new URLSearchParams();
+        if (searchTerm) params.set('search', searchTerm);
+        if (locationFilter) params.set('location', locationFilter);
+        if (payFilter) params.set('pay', payFilter);
+
+        // Reload the page with the updated URL
+        window.location.href = `search_results.php?${params.toString()}`;
+    }
+</script>
 </body>
 </html>
